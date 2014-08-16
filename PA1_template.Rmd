@@ -8,7 +8,7 @@ install.packages("xtable")
 The raw data is assumed to be int he working directory (this is a reasonable
 assumption since the project istarted as a clone which contains the data).
 
-Unzip the datafile.
+Unzip and read the datafile.
 ```{r loadData}
 fileName = 'activity'
 if( !file.exists(paste0( fileName, '.csv'))) {
@@ -23,11 +23,11 @@ data <-  na.omit(data)
 data$date <- as.Date(data$date, "%Y-%m-%d")
 ```
 ## What is mean total number of steps taken per day?
-daily object is the daily sum of steps.
 ```{r plotData}
 daily = tapply( data$steps, data$date, sum)
 hist( daily, main = "Histogram of frequency of daily steps", xlab = "Number of Daily Steps")
 ```
+
 Compute daily mean and median values.
 ```{r stats}
 library(xtable)
@@ -47,6 +47,13 @@ imean = tapply( data$steps, data$interval, mean)
 lmean = unlist(labels(imean))
 plot( lmean,imean, type="l", xlab="Interval", ylab="Number of Steps", main="Average Daily Activity Pattern")
 ```
+```{r vars}
+maxSteps = max( data$steps)
+maxInt = data$interval[ data$steps==max( data$steps)]
+maxDate = data$date[ data$steps==max( data$steps)]
+```
+###Maximum Number of Steps
+The maximum number of steps (`r maxSteps`) was in interval `r maxInt` on `r maxDate`.
 
 ## Imputing missing values
 Replace NA values in number of steps with the daily average.
@@ -68,13 +75,10 @@ colnames( dboth2) <- c( "Mean", "Median" )
 print( xtable(dboth2), type="html")
 ```
 ## Are there differences in activity patterns between weekdays and weekends?
-Yes, the data shows a differenc ebetween weekday and weekend activity.  
-1.Create a new factor variable in the dataset with two levels -- "weekday" and "weekend"
-indicating whether a given date is a weekday or weekend day.
+Yes, the data shows a difference between weekday and weekend activity.  
 ```{r weekdays}
 data$isWeekday <- factor(weekdays(data$date) %in% c('Saturday','Sunday'), labels=c("weekday", "weekend"))
 ```
-2.Make a panel plot containing a time series plot (i.e.  type = "l" ) of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). The plot should look something like the following, which was creating using simulated data:
 ```{r panelplot}
 library(lattice)
 weekdays <- subset(data,data$isWeekday == "weekday")

@@ -1,20 +1,83 @@
 # Reproducible Research: Peer Assessment 1
-
+Miscellaneous setup
+``` { r misc}
+install.packages("xtable")
+```
 
 ## Loading and preprocessing the data
+The raw data is assumed to be int he working directory (this is a reasonable
+assumption since the project istarted as a clone which contains the data).
 
-
-
+Unzip the datafile.
+```{r loadData}
+fileName = 'activity'
+if( !file.exists(paste0( fileName, '.csv'))) {
+  unzip( paste0( fileName, '.zip'))
+}
+data = read.csv(paste0( fileName, '.csv'))
+```
+## Manipulate the Data
+Remove NA data and change date strings to dat objects.
+```{r showData}
+data <-  na.omit(data) 
+data$date <- as.Date(data$date, "%Y-%m-%d")
+```
 ## What is mean total number of steps taken per day?
-
-
+daily object is the daily sum of steps.
+```{r plotData}
+daily = tapply( data$steps, data$date, sum)
+hist( daily, main = "Histogram of frequency of daily steps", xlab = "Number of Daily Steps")
+```
+Compute daily mean and median values.
+```{r stats}
+library(xtable)
+dmean=tapply( data$steps, data$date, mean)
+dmedian=tapply( data$steps, data$date, median)
+dboth = cbind( dmean, dmedian)
+colnames( dboth) <- c( "Mean", "Median" ) 
+```
+### Table of Daily Mean and Median Step Values
+```{r, results='asis'}
+print( xtable(dboth), type="html")
+```
 
 ## What is the average daily activity pattern?
-
-
+```{r plot}
+imean = tapply( data$steps, data$interval, mean)
+lmean = unlist(labels(imean))
+plot( lmean,imean, type="l", xlab="Interval", ylab="Number of Steps", main="Average Daily Activity Pattern")
+```
 
 ## Imputing missing values
-
-
-
+Replace NA values in number of steps with the daily average.
+```{r missing}
+data2 = read.csv(paste0( fileName, '.csv'))
+data2$steps[is.na(data2$steps)]=tapply( data$steps, data$date, mean)
+daily2 = tapply( data2$steps, data2$date, sum)
+hist( daily2, main = "Histogram of frequency of daily steps (with imputed missing values)", xlab = "Number of Daily Steps")
+```
+```{r missingstats, results='asis'}
+library(xtable)
+dmean2=tapply( data2$steps, data2$date, mean)
+dmedian2=tapply( data2$steps, data2$date, median)
+dboth2 = cbind( dmean2, dmedian2)
+colnames( dboth2) <- c( "Mean", "Median" ) 
+```
+### Table of Daily Mean and Median Step Values with Imputed Missing Values
+```{r, results='asis'}
+print( xtable(dboth2), type="html")
+```
 ## Are there differences in activity patterns between weekdays and weekends?
+Yes, the data shows a differenc ebetween weekday and weekend activity.  
+1.Create a new factor variable in the dataset with two levels -- "weekday" and "weekend"
+indicating whether a given date is a weekday or weekend day.
+```{r weekdays}
+data$isWeekday <- factor(weekdays(data$date) %in% c('Saturday','Sunday'), labels=c("weekday", "weekend"))
+```
+2.Make a panel plot containing a time series plot (i.e.  type = "l" ) of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). The plot should look something like the following, which was creating using simulated data:
+```{r panelplot}
+library(lattice)
+weekdays <- subset(data,data$isWeekday == "weekday")
+weekends <- subset(data,data$isWeekday == "weekend")
+xyplot( data$steps~data$interval | data$isWeekday, ylab="Number of steps", xlab="Interval", type="l", scales=list( alternating=TRUE),layout=c(1,2))
+```
